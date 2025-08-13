@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-ai-profile"
+version = "0.1.0"
+description = "CLI to analyze LinkedIn writing and GitHub code style (RAG over multiple repos)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text= "MIT License" }
+authors = [
+    { name = "Juan Manuel Barea Martinez", email = "jbarea@redhat.com" },
+]
+
+# Runtime dependencies
+dependencies = [
+  "typer==0.9.0",
+  "PyGithub==2.1.1",
+  "linkedin-api==2.0.0a5",
+  "beautifulsoup4==4.12.3",
+  "requests==2.31.0",
+  "langchain==0.2.11",
+  "langchain-openai==0.1.17",
+]
+
+[project.urls]
+Homepage = "https://example.com"
+Repository = "https://example.com/repo"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["analyzers*", "generators*", "sources*"] 

@@ -1,7 +1,0 @@
-typer==0.9.0
-openai==1.3.7
-google-generativeai==0.7.2
-PyGithub==2.1.1
-linkedin-api==2.0.0a5
-beautifulsoup4==4.12.3
-requests==2.31.0
