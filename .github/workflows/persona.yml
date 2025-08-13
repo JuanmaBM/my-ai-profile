@@ -1,0 +1,60 @@
+name: AI Persona Extractor
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linkedin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ai-persona .
+      - run: docker run --rm -v $PWD:/app \
+          -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
+          -e GEMINI_KEY=${{ secrets.GEMINI_KEY }} \
+          -e LLM_PROVIDER=${{ secrets.LLM_PROVIDER }} \
+          -e LINKEDIN_USER=${{ secrets.LINKEDIN_USER }} \
+          -e LINKEDIN_PASS=${{ secrets.LINKEDIN_PASS }} \
+          ai-persona python cli.py linkedin --user "usuario_linkedin"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linkedin_result
+          path: linkedin_analysis.json
+
+  github:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ai-persona .
+      - run: docker run --rm -v $PWD:/app \
+          -e OPENAI_KEY=${{ secrets.OPENAI_KEY }} \
+          -e GEMINI_KEY=${{ secrets.GEMINI_KEY }} \
+          -e LLM_PROVIDER=${{ secrets.LLM_PROVIDER }} \
+          -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+          ai-persona python cli.py github --user "usuario_github" --repo "repo_name"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: github_result
+          path: github_analysis.json
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: [linkedin, github]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linkedin_result
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: github_result
+          path: .
+      - run: docker build -t ai-persona .
+      - run: docker run --rm -v $PWD:/app ai-persona python cli.py merge
+      - run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add profile.md
+          git commit -m "Perfil actualizado [skip ci]" || echo "No hay cambios"
+          git push
