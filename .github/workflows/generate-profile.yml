@@ -1,0 +1,109 @@
+name: Generate AI Profile
+
+on:
+  workflow_dispatch:
+    inputs:
+      github_user:
+        description: GitHub username
+        required: true
+        type: string
+      linkedin_user:
+        description: LinkedIn public id/username
+        required: true
+        type: string
+      name:
+        description: Display name for the final profile
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  github:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/jbarea/my-ai-profile-generator:1.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run GitHub analysis
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          python cli.py github "${{ inputs.github_user }}"
+
+      - name: Upload GitHub analysis artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-analysis
+          path: github_analysis.json
+
+  linkedin:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/jbarea/my-ai-profile-generator:1.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run LinkedIn analysis
+        env:
+          LINKEDIN_EMAIL: ${{ secrets.LINKEDIN_EMAIL }}
+          LINKEDIN_PASSWORD: ${{ secrets.LINKEDIN_PASSWORD }}
+          GITHUB_TOKEN: ${{ github.token }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          python cli.py linkedin "${{ inputs.linkedin_user }}"
+
+      - name: Upload LinkedIn analysis artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linkedin-analysis
+          path: linkedin_analysis.json
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: [github, linkedin]
+    container:
+      image: quay.io/jbarea/my-ai-profile-generator:1.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download GitHub analysis
+        uses: actions/download-artifact@v4
+        with:
+          name: github-analysis
+          path: .
+
+      - name: Download LinkedIn analysis
+        uses: actions/download-artifact@v4
+        with:
+          name: linkedin-analysis
+          path: .
+
+      - name: Run merge
+        run: |
+          python cli.py merge "${{ inputs.name }}"
+
+      - name: Commit and push updated profile
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          if git status --porcelain | grep -q "MyAIProfile.md"; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add MyAIProfile.md
+            git commit -m "chore: update MyAIProfile.md [skip ci]" || exit 0
+            git push
+          else
+            echo "No changes to commit."
+          fi 
