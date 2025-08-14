@@ -38,5 +38,8 @@ def _get_llm() -> ChatOpenAI:
 def analyze(prompt: str) -> str:
     """Run a single-turn analysis with the configured LLM and return the text output."""
     llm = _get_llm()
-    # Using predict to get a plain string
-    return llm.predict(prompt).strip()
+    # Use invoke() to avoid deprecation of predict()
+    result = llm.invoke(prompt)
+    # result can be a BaseMessage; get .content
+    content = getattr(result, "content", None)
+    return (content if isinstance(content, str) else str(result)).strip()
