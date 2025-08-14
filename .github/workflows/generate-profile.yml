@@ -134,15 +134,12 @@ jobs:
           ], 'linkedin_analysis.json')
           PY
 
-      - name: Run merge
-        run: |
-          ls -la
-          python cli.py merge "${{ inputs.name }}"
-
-      - name: Commit and push updated profile
+      - name: Run merge and push profile
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
+          ls -la
+          python cli.py merge "${{ inputs.name }}"
           set -e
           if git status --porcelain | grep -q "MyAIProfile.md"; then
             git config user.name "github-actions[bot]"
