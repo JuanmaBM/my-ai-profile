@@ -1,16 +1,16 @@
 def generate_markdown(profile_data: dict) -> str:
-    md = f"""# Perfil de {profile_data.get('name')}
+    md = f"""# {profile_data.get('name')}'s profile
 
-## Personalidad
+## Personality
 {profile_data.get('personality')}
 
-## Estilo de escritura
+## Writing style
 {profile_data.get('writing_style')}
 
-## Estilo de código
+## Code style
 {profile_data.get('code_style')}
 
-## Temas de interés
+## Interests
 - {chr(10).join(profile_data.get('topics', []))}
 """
     return md

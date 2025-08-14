@@ -19,9 +19,9 @@ def fetch_github_repo_links(user: str) -> List[str]:
     """
     base_url = f"https://api.github.com/users/{user}/repos"
     headers = {}
-    # token = os.getenv("GITHUB_TOKEN")
-    # if token:
-    #     headers["Authorization"] = f"token {token}"
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"token {token}"
 
     params = {"per_page": 100, "type": "public", "sort": "updated"}
     links: List[str] = []

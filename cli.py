@@ -11,9 +11,10 @@ app = typer.Typer()
 
 @app.command()
 def linkedin(user: str):
-    texts = fetch_linkedin_articles(user)
-    analysis = analyze_text_style(" ".join(texts[:3]))
-    Path("linkedin_analysis.json").write_text(json.dumps({"linkedin": analysis}))
+    data = fetch_linkedin_articles(user)
+    texts = data.get("posts", []) if isinstance(data, dict) else (data or [])
+    analysis = analyze_text_style(" ".join(texts))
+    Path("linkedin_analysis.json").write_text(json.dumps({"linkedin": analysis, "interests": data.get("interests", [])}))
     typer.echo("✅ LinkedIn analysis completed")
 
 
@@ -24,22 +25,22 @@ def github(user: str):
     Path("github_analysis.json").write_text(json.dumps({"github": analysis}))
     typer.echo("✅ GitHub analysis completed")
 
-
 @app.command()
-def merge():
+def merge(user: str):
     data = {}
     for file in ["linkedin_analysis.json", "github_analysis.json"]:
         if Path(file).exists():
             data.update(json.loads(Path(file).read_text()))
     md = generate_markdown({
-        "name": "Usuario",
+        "name": user,
         "personality": data.get("linkedin", ""),
-        "writing_style": data.get("linkedin", ""),
+        # TODO: add new source for writing style
+        # "writing_style": data.get("linkedin", ""),
         "code_style": data.get("github", ""),
-        "topics": ["IA", "Open Source"]
+        "topics": data.get("interests", [])
     })
-    Path("profile.md").write_text(md)
-    typer.echo("✅ Final profile generated in profile.md")
+    Path("MyAIProfile.md").write_text(md)
+    typer.echo("✅ Final profile generated in MyAIProfile.md")
 
 if __name__ == "__main__":
     app()

@@ -157,33 +157,72 @@ def _fetch_user_posts(api: "Linkedin", public_id: str) -> List[dict]:
     return aggregated
 
 
-def fetch_linkedin_articles(user: str) -> List[str]:
-    """Fetch all available LinkedIn posts for a user and return a list of post contents.
+def fetch_linkedin_articles(user: str) -> dict:
+    """Fetch posts and derived personal interests for a user in a single API pass.
 
-    Authentication:
-    - Either LINKEDIN_LI_AT (+ optional LINKEDIN_JSESSIONID) or LINKEDIN_EMAIL + LINKEDIN_PASSWORD
-
-    Notes:
-    - This uses the unofficial `linkedin-api` package and may be subject to breakage due to
-      LinkedIn website changes or account restrictions such as 2FA/challenges.
-    - The function returns only textual content extracted from posts, best-effort.
+    Returns a dict with keys:
+    - "posts": List[str] extracted textual contents of posts
+    - "interests": List[str] inferred interests (hashtags preferred, then keywords)
     """
+    import re
+    from collections import Counter
+
     api = _ensure_linkedin_client()
     if api is None:
-        return []
+      return {"posts": [], "interests": []}
 
-    contents: List[str] = []
-    posts = _fetch_user_posts(api, user)
-    if not posts:
-        return []
+    posts_payloads = _fetch_user_posts(api, user)
+    if not posts_payloads:
+      return {"posts": [], "interests": []}
 
-    for post in posts:
-        try:
-            text = _extract_post_text(post)
-            if text:
-                contents.append(text)
-        except Exception as e:
-            print(f"[linkedin] error extracting post text: {e}")
-            continue
+    # Extract post texts
+    post_texts: List[str] = []
+    for post in posts_payloads:
+      try:
+        text = _extract_post_text(post)
+        if text:
+          post_texts.append(text)
+      except Exception:
+        continue
 
-    return contents
+    # Derive interests from the same texts
+    hashtag_counter: Counter[str] = Counter()
+    keyword_counter: Counter[str] = Counter()
+
+    stopwords = {
+      "the","a","an","and","or","but","if","then","else","for","to","of","in","on","at","by","with","is","are","was","were","be","been","being","this","that","these","those","it","its","as","from","about","into","over","after","before","between","out","against","during","without","within","along","across","behind","beyond","via","you","your","we","our","they","their","i","me","my",
+      "el","la","los","las","un","una","unos","unas","y","o","pero","si","entonces","sino","para","de","del","al","en","por","con","es","son","fue","eran","ser","esta","este","estos","estas","eso","esa","esas","estos","como","sobre","entre","sin","dentro","fuera","tras","hacia","desde","yo","mi","mis","nosotros","nuestro","nuestra","tus","sus"
+    }
+
+    for text in post_texts:
+      # Hashtags
+      for tag in re.findall(r"#([\wÁÉÍÓÚÜÑáéíóúüñ]+)", text):
+        normalized = f"#{tag.strip()}"
+        if len(normalized) > 1:
+          hashtag_counter[normalized.lower()] += 1
+      # Keywords
+      words = re.findall(r"[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9]{3,}", text)
+      for w in words:
+        lw = w.lower()
+        if lw in stopwords:
+          continue
+        if lw.startswith("#"):
+          continue
+        keyword_counter[lw] += 1
+
+    interests: List[str] = []
+    if hashtag_counter:
+      interests.extend([t for t, _ in hashtag_counter.most_common(15)])
+    if not interests and keyword_counter:
+      interests.extend([t for t, _ in keyword_counter.most_common(15)])
+
+    # Dedup while preserving order
+    seen = set()
+    unique_interests: List[str] = []
+    for t in interests:
+      if t not in seen:
+        seen.add(t)
+        unique_interests.append(t)
+
+    interests_clean = [t[1:] if t.startswith("#") else t for t in unique_interests]
+    return {"posts": post_texts, "interests": interests_clean}
