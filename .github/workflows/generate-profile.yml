@@ -89,59 +89,47 @@ jobs:
           name: linkedin-analysis
           path: .
 
-      - name: Extract downloaded artifacts (if zipped)
+      - name: Place analysis files at repo root
         run: |
-          python - <<'PY'
-          import glob, zipfile, os
-          for zpath in glob.glob("*.zip"):
-              with zipfile.ZipFile(zpath) as zf:
-                  zf.extractall(".")
-              os.remove(zpath)
-          PY
+          mv -f github-analysis/github_analysis.json . 2>/dev/null || true
+          mv -f linkedin-analysis/linkedin_analysis.json . 2>/dev/null || true
+          ls -la
 
-      - name: Normalize artifact file locations
+      - name: Run merge
         run: |
-          python - <<'PY'
-          import os, glob, shutil
+          python cli.py merge "${{ inputs.name }}"
+          ls -la
 
-          def move_first(patterns, dest_name):
-              # If already present at root, keep it
-              if os.path.exists(dest_name):
-                  return
-              for pat in patterns:
-                  for path in glob.glob(pat, recursive=True):
-                      if os.path.isfile(path):
-                          shutil.move(path, dest_name)
-                          return
+      - name: Upload final profile artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-profile
+          path: MyAIProfile.md
 
-          # Possible locations/names produced by artifact download
-          move_first([
-              'github-analysis/github_analysis.json',
-              'github-analysis/**/github_analysis.json',
-              '**/github_analysis.json',
-              'github-analysis/github-analysis.json',
-              'github-analysis/**/github-analysis.json',
-              '**/github-analysis.json',
-          ], 'github_analysis.json')
+  push:
+    runs-on: ubuntu-latest
+    needs: [merge]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-          move_first([
-              'linkedin-analysis/linkedin_analysis.json',
-              'linkedin-analysis/**/linkedin_analysis.json',
-              '**/linkedin_analysis.json',
-              'linkedin-analysis/linkedin-analysis.json',
-              'linkedin-analysis/**/linkedin-analysis.json',
-              '**/linkedin-analysis.json',
-          ], 'linkedin_analysis.json')
-          PY
+      - name: Download final profile artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: final-profile
+          path: .
 
-      - name: Run merge and push profile
+      - name: Move profile to root
+        run: |
+          mv -f final-profile/MyAIProfile.md . 2>/dev/null || true
+          ls -la
+
+      - name: Commit and push updated profile
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          ls -la
-          python cli.py merge "${{ inputs.name }}"
-          ls -la
           set -e
+          git config --global --add safe.directory "$PWD"
           if git status --porcelain | grep -q "MyAIProfile.md"; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
