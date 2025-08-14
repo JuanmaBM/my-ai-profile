@@ -88,7 +88,8 @@ def _parse_repo_link(repo_link: str) -> Optional[Tuple[str, str]]:
             return None
         owner, repo = parts[0], parts[1].replace(".git", "")
         return owner, repo
-    except Exception:
+    except Exception as e:
+        print(f"[github] error parsing repo link '{repo_link}': {e}")
         return None
 
 

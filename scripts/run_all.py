@@ -31,9 +31,9 @@ def _load_dotenv(env_path: Path) -> None:
             value = value.strip().strip('"').strip("'")
             if key:
                 os.environ[key] = value
-    except Exception:
-        # Fail-soft: do not break the pipeline if .env parsing has odd lines
-        pass
+    except Exception as e:
+        print(f"[dotenv] error loading .env: {e}")
+        return 1
 
 
 def main() -> int:

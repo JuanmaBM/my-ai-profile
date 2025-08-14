@@ -4,8 +4,9 @@ from urllib.parse import urlparse
 
 try:
     from linkedin_api import Linkedin  # type: ignore
-except Exception:  # pragma: no cover
-    Linkedin = None  # Fallback if the package is not available at runtime
+except Exception as e:  # pragma: no cover
+    print(f"[linkedin] error importing Linkedin: {e}")
+    raise e
 
 
 def _ensure_linkedin_client() -> Optional["Linkedin"]:
@@ -20,8 +21,9 @@ def _ensure_linkedin_client() -> Optional["Linkedin"]:
         return None
     try:
         return Linkedin(email, password)
-    except Exception:
-        return None
+    except Exception as e:
+        print(f"[linkedin] error creating client: {e}")
+        raise e
 
 
 def _collect_text_fields(obj: Any, results: List[str]) -> None:
@@ -142,7 +144,6 @@ def _coerce_posts(obj: Any) -> List[dict]:
 
 def _fetch_user_posts(api: "Linkedin", public_id: str) -> List[dict]:
     """Fetch posts/updates using several method names supported in different versions."""
-    debug = os.getenv("LINKEDIN_DEBUG", "0") == "1"
 
     aggregated: List[dict] = []
     try:
@@ -151,8 +152,8 @@ def _fetch_user_posts(api: "Linkedin", public_id: str) -> List[dict]:
         if posts:
             aggregated.extend(posts)
     except Exception as e:
-        if debug:
-            print(f"[linkedin] call without pagination failed: {e}")
+        print(f"[linkedin] error fetching posts: {e}")
+        raise e
 
     return aggregated
 
@@ -182,7 +183,8 @@ def fetch_linkedin_articles(user: str) -> dict:
         text = _extract_post_text(post)
         if text:
           post_texts.append(text)
-      except Exception:
+      except Exception as e:
+        print(f"[linkedin] error extracting post text: {e}")
         continue
 
     # Derive interests from the same texts
