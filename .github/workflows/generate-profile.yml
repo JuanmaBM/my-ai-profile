@@ -89,8 +89,54 @@ jobs:
           name: linkedin-analysis
           path: .
 
+      - name: Extract downloaded artifacts (if zipped)
+        run: |
+          python - <<'PY'
+          import glob, zipfile, os
+          for zpath in glob.glob("*.zip"):
+              with zipfile.ZipFile(zpath) as zf:
+                  zf.extractall(".")
+              os.remove(zpath)
+          PY
+
+      - name: Normalize artifact file locations
+        run: |
+          python - <<'PY'
+          import os, glob, shutil
+
+          def move_first(patterns, dest_name):
+              # If already present at root, keep it
+              if os.path.exists(dest_name):
+                  return
+              for pat in patterns:
+                  for path in glob.glob(pat, recursive=True):
+                      if os.path.isfile(path):
+                          shutil.move(path, dest_name)
+                          return
+
+          # Possible locations/names produced by artifact download
+          move_first([
+              'github-analysis/github_analysis.json',
+              'github-analysis/**/github_analysis.json',
+              '**/github_analysis.json',
+              'github-analysis/github-analysis.json',
+              'github-analysis/**/github-analysis.json',
+              '**/github-analysis.json',
+          ], 'github_analysis.json')
+
+          move_first([
+              'linkedin-analysis/linkedin_analysis.json',
+              'linkedin-analysis/**/linkedin_analysis.json',
+              '**/linkedin_analysis.json',
+              'linkedin-analysis/linkedin-analysis.json',
+              'linkedin-analysis/**/linkedin-analysis.json',
+              '**/linkedin-analysis.json',
+          ], 'linkedin_analysis.json')
+          PY
+
       - name: Run merge
         run: |
+          ls -la
           python cli.py merge "${{ inputs.name }}"
 
       - name: Commit and push updated profile
