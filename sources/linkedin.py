@@ -1,24 +1,42 @@
 import os
 from typing import List, Optional, Any
 from urllib.parse import urlparse
+from requests.cookies import RequestsCookieJar
 
 try:
     from linkedin_api import Linkedin  # type: ignore
-except Exception as e:  # pragma: no cover
-    print(f"[linkedin] error importing Linkedin: {e}")
-    raise e
+except Exception:  # pragma: no cover
+    Linkedin = None  # Fallback if the package is not available at runtime
 
 
 def _ensure_linkedin_client() -> Optional["Linkedin"]:
     """Create a Linkedin API client using env vars.
+
+    Supports two auth modes (in this order):
+    - Cookie-based: LINKEDIN_LI_AT (+ optional LINKEDIN_JSESSIONID)
+    - Username/password: LINKEDIN_EMAIL + LINKEDIN_PASSWORD
     """
     if Linkedin is None:
         return None
 
+    # 1) Cookie-based session authentication
+    li_at = os.getenv("LINKEDIN_LI_AT")
+    jsession = os.getenv("LINKEDIN_JSESSIONID")
+    if li_at:
+        try:
+            jar = RequestsCookieJar()
+            jar.set("li_at", li_at, domain=".linkedin.com", path="/")
+            if jsession:
+                jar.set("JSESSIONID", jsession, domain=".linkedin.com", path="/")
+            # username/password unused when cookies are provided, pass empty strings
+            return Linkedin("", "", cookies=jar)
+        except Exception as e:
+            print(f"[linkedin] cookie-based login failed: {e}")
+            # fall through to email/password
+
+    # 2) Username/password authentication
     email = os.getenv("LINKEDIN_EMAIL")
     password = os.getenv("LINKEDIN_PASSWORD")
-    print(f"[linkedin] creating client with email: {email}")
-    print(f"[linkedin] password: {password}")
     if not email or not password:
         return None
     try:
