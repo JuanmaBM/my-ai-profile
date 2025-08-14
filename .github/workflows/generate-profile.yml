@@ -140,6 +140,7 @@ jobs:
         run: |
           ls -la
           python cli.py merge "${{ inputs.name }}"
+          ls -la
           set -e
           if git status --porcelain | grep -q "MyAIProfile.md"; then
             git config user.name "github-actions[bot]"
