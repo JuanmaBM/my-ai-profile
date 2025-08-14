@@ -17,11 +17,11 @@ def _ensure_linkedin_client() -> Optional["Linkedin"]:
 
     email = os.getenv("LINKEDIN_EMAIL")
     password = os.getenv("LINKEDIN_PASSWORD")
+    print(f"[linkedin] creating client with email: {email}")
+    print(f"[linkedin] password: {password}")
     if not email or not password:
         return None
     try:
-        print(f"[linkedin] creating client with email: {email}")
-        print(f"[linkedin] password: {password}")
         return Linkedin(email, password)
     except Exception as e:
         print(f"[linkedin] error creating client: {e}")
