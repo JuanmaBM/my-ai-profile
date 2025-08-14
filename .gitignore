@@ -75,7 +75,7 @@ temp/
 # IDEs / Editors
 # Keep only VS Code launch.json; ignore the rest
 .vscode/*
-!.vscode/launch.json
+.vscode/launch.json
 .idea/
 *.iml
 
