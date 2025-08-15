@@ -6,23 +6,6 @@ from urllib.parse import urlparse
 from typing import List, Dict, Tuple, Optional
 
 
-def analyze_code_style(code: str) -> str:
-    prompt = f"""
-    Analyze the following code and describe:
-    - Conventions used (naming, indentation, comments)
-    - Detected design patterns and architecture traits
-    - Clarity and maintainability level
-
-    Code:
-    {code}
-    """
-    return analyze(prompt)
-
-
-# ----------------------------
-# RAG-style analysis from repos
-# ----------------------------
-
 _GITHUB_API = "https://api.github.com"
 _RAW_BASE = "https://raw.githubusercontent.com"
 _EXT_TO_LANGUAGE: Dict[str, str] = {
@@ -240,16 +223,45 @@ def analyze_code_style_from_repos(repo_links: List[str]) -> str:
     context_block = "\n\n".join(context_sections) if context_sections else "No code samples retrieved."
 
     prompt = f"""
-    You are a code style analyst. Below are code samples extracted from multiple repositories and grouped by programming language.
+    You are a senior code review and style analysis expert.
+    You are given code samples extracted from multiple repositories, grouped by programming language.
 
     Your tasks:
-    1) Provide a consolidated code style analysis with sections per language (use language headings).
-    2) For each language, describe:
-       - Conventions (naming, formatting, comments, folder structure)
-       - Patterns and architecture (frameworks, design patterns, modularity)
-       - Quality (clarity, maintainability, testing)
-    3) Then compare across languages: key similarities and differences.
-    4) Finish with a 4-6 line executive summary of the most representative common traits.
+    1. Provide a consolidated code style analysis, organized **per language** with clear headings.
+    2. For each language, describe:
+    - **Conventions**: naming standards, formatting, comments, file/folder structure
+    - **Patterns & Architecture**: frameworks, design patterns, modularity, dependency management
+    - **Code Quality**: clarity, maintainability, adherence to best practices, error handling, testing coverage
+    - **Common Libraries & Tools**: frequently used dependencies or built-in features
+    - **Strengths & Weaknesses**: highlight both good and bad practices found
+
+    3. After individual analyses, provide a **cross-language comparison**:
+    - Key similarities in style or architecture
+    - Significant differences in approach or code quality
+    - Observations about consistency across repositories
+
+    4. Finish with an **executive summary** (4–6 lines) highlighting the most representative and recurring traits, including strengths and improvement opportunities.
+
+    Guidelines:
+    - Be objective and evidence-based; avoid speculation beyond code samples.
+    - Use bullet points where possible for clarity.
+    - Keep section headings clear so they are easy to parse programmatically.
+    - Output in this exact structure:
+
+    ## <Language>
+    Conventions: ...
+    Patterns & Architecture: ...
+    Code Quality: ...
+    Common Libraries & Tools: ...
+    Strengths & Weaknesses: ...
+
+    ## Cross-Language Comparison
+    Similarities: ...
+    Differences: ...
+    Consistency Observations: ...
+
+    ## Executive Summary
+    ...
 
     Repositories analyzed:
     {repos_overview}
