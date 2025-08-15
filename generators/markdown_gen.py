@@ -3,6 +3,8 @@ def generate_markdown(profile_data: dict) -> str:
     important_notes_section = _get_important_notes_section(profile_data)
     md = f"""# {profile_data.get('name')}'s profile
 
+{important_notes_section}
+
 ## Personality
 {profile_data.get('personality')}
 
@@ -14,8 +16,6 @@ def generate_markdown(profile_data: dict) -> str:
 
 ## Interests
 {chr(10).join(f'- {t}' for t in profile_data.get('topics', []))}
-
-{important_notes_section}
 """
     return md
 
