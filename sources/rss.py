@@ -17,8 +17,11 @@ def fetch_rss_content(url: str, max_entries: Optional[int] = None) -> Dict[str, 
         Dict containing 'entries' list with title, link, summary, content, and published_date
     """
     try:
-        # Fetch the RSS feed
-        response = requests.get(url, timeout=30)
+        # Fetch the RSS feed with a custom User-Agent header to avoid 403 errors
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; MyAIProfileBot/1.0; +https://github.com/jbarea/my-ai-profile-generator)"
+        }
+        response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         
         # Parse the RSS feed
