@@ -11,6 +11,6 @@ def generate_markdown(profile_data: dict) -> str:
 {profile_data.get('code_style')}
 
 ## Interests
-- {chr(10).join(profile_data.get('topics', []))}
+f"{chr(10).join(f'- {t}' for t in profile_data.get('topics', []))}"
 """
     return md
