@@ -17,47 +17,12 @@ def fetch_rss_content(url: str, max_entries: Optional[int] = None) -> Dict[str, 
         Dict containing 'entries' list with title, link, summary, content, and published_date
     """
     try:
-        # Try multiple User-Agent strategies to avoid 403 errors
-        user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "feedparser/6.0.10",
-            "Mozilla/5.0 (compatible; RSS Reader)"
-        ]
+        print(f"Fetching RSS feed: {url}")
         
-        response = None
-        last_error = None
+        # Simple approach: just use feedparser with a good User-Agent
+        feedparser.USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         
-        for user_agent in user_agents:
-            try:
-                headers = {
-                    "User-Agent": user_agent,
-                    "Accept": "application/rss+xml, application/xml, text/xml, */*",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Accept-Encoding": "gzip, deflate",
-                    "Connection": "keep-alive",
-                    "Upgrade-Insecure-Requests": "1"
-                }
-                response = requests.get(url, headers=headers, timeout=30, allow_redirects=True)
-                response.raise_for_status()
-                break  # If successful, break out of the loop
-            except requests.exceptions.HTTPError as e:
-                last_error = e
-                if response and response.status_code == 403:
-                    print(f"403 error with User-Agent: {user_agent}")
-                    continue  # Try next user agent
-                else:
-                    raise e  # If it's not a 403, raise immediately
-            except Exception as e:
-                last_error = e
-                continue  # Try next user agent
-        
-        if response is None or response.status_code != 200:
-            raise last_error or Exception("All User-Agent attempts failed")
-        
-        # Parse the RSS feed
-        feed = feedparser.parse(response.content)
+        feed = feedparser.parse(url)
         
         if not feed.entries:
             print(f"No entries found in RSS feed: {url}")
@@ -67,6 +32,7 @@ def fetch_rss_content(url: str, max_entries: Optional[int] = None) -> Dict[str, 
         feed_entries = feed.entries[:max_entries] if max_entries else feed.entries
         
         for entry in feed_entries:
+            # Extract entry data
             entry_data = {
                 "title": getattr(entry, 'title', ''),
                 "content": getattr(entry, 'content', ''),
@@ -75,12 +41,10 @@ def fetch_rss_content(url: str, max_entries: Optional[int] = None) -> Dict[str, 
         
         return {"entries": entries}
     
-    except requests.RequestException as e:
-        print(f"Error fetching RSS feed {url}: {e}")
-        return {"entries": []}
     except Exception as e:
-        print(f"Error parsing RSS feed {url}: {e}")
+        print(f"Error processing RSS feed {url}: {e}")
         return {"entries": []}
+
 
 def get_rss_articles_text(url: str, max_entries: Optional[int] = None) -> List[str]:
     """
@@ -99,7 +63,19 @@ def get_rss_articles_text(url: str, max_entries: Optional[int] = None) -> List[s
     for entry in rss_data.get("entries", []):
         # Combine title and content for analysis
         title = entry.get("title", "")
-        content = entry.get("content", "") or entry.get("summary", "")
+        content = entry.get("content", "")
+        
+        # Handle content that might be a list (from feedparser)
+        if isinstance(content, list) and content:
+            content = content[0].get('value', '') if isinstance(content[0], dict) else str(content[0])
+        elif hasattr(content, 'value'):
+            content = content.value
+        elif not isinstance(content, str):
+            content = str(content)
+        
+        # Clean HTML tags if present
+        content = re.sub(r'<[^>]+>', ' ', content)
+        content = re.sub(r'\s+', ' ', content).strip()
         
         if title or content:
             article_text = f"{title}\n{content}".strip()

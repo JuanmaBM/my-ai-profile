@@ -28,25 +28,12 @@ def github(user: str):
 
 @app.command()
 def rss(url: str, name: str):
-    try:
-        rss_content = get_rss_articles_text(url, 30)
-        if not rss_content:
-            print(f"Warning: No content retrieved from RSS feed {url}")
-            analysis = "No content available for analysis from this RSS feed."
-        else:
-            analysis = analyze_writting_style(" ".join(rss_content))
-        
-        existing_data = _load_rss_file("rss_analysis.json")
-        existing_data[name] = analysis
-        Path("rss_analysis.json").write_text(json.dumps(existing_data, indent=2))
-        typer.echo(f"✅ RSS analysis completed for {name}")
-    except Exception as e:
-        print(f"Error processing RSS feed {url}: {e}")
-        # Still create the file with error message to avoid workflow failure
-        existing_data = _load_rss_file("rss_analysis.json")
-        existing_data[name] = f"Error processing RSS feed: {str(e)}"
-        Path("rss_analysis.json").write_text(json.dumps(existing_data, indent=2))
-        typer.echo(f"⚠️ RSS analysis completed with errors for {name}")
+    rss_content = get_rss_articles_text(url, 30)
+    analysis = analyze_writting_style(" ".join(rss_content))
+    existing_data = _load_rss_file("rss_analysis.json")
+    existing_data[name] = analysis
+    Path("rss_analysis.json").write_text(json.dumps(existing_data, indent=2))
+    typer.echo(f"✅ RSS analysis completed for {name}")
 
 @app.command("important_notes")
 def important_notes(important_notes: str):
