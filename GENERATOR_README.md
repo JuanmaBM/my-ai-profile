@@ -218,6 +218,26 @@ Compatible with any OpenAI-compatible API:
 - Local LLM servers (Ollama, vLLM, etc.)
 - Other compatible APIs
 
+### Analysis Limitations
+
+The current version has the following analysis constraints to optimize performance and API costs:
+
+#### GitHub Code Analysis:
+- **📁 Files per repository**: Maximum 12 files sampled per repository
+- **📄 Characters per file**: Maximum 4,000 characters analyzed per file
+- **🔤 Snippets per language**: Maximum 6 code snippets per programming language
+- **📚 Repositories**: No limit - analyzes all public repositories
+
+#### LinkedIn Content Analysis:
+- **📝 Posts analyzed**: Maximum 10 recent posts
+- **🔍 Content extraction**: Focuses on main post text, filters out URLs and UI elements
+
+#### RSS Feed Analysis:
+- **📰 Entries processed**: Default 30 entries per RSS feed (configurable)
+- **🏷️ Multiple sources**: Supports unlimited RSS sources with platform-specific analysis
+
+> **⚙️ Future Updates**: These limitations may be adjusted in future versions based on performance testing and user feedback. They are designed to balance analysis quality with processing efficiency while staying within reasonable API usage limits.
+
 ## 📊 Output
 
 The tool generates a `MyAIProfile.md` file containing:
