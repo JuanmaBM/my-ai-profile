@@ -87,4 +87,4 @@ temp/
 # Project-specific generated artifacts
 linkedin_analysis.json
 github_analysis.json
-profile.md 
+rss_analysis.json
