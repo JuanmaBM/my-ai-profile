@@ -35,7 +35,7 @@ jobs:
   github:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/jbarea/my-ai-profile-generator:1.2
+      image: quay.io/jbarea/my-ai-profile-generator:1.1.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
   linkedin:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/jbarea/my-ai-profile-generator:1.2
+      image: quay.io/jbarea/my-ai-profile-generator:1.1.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.rss_url != '' }}
     container:
-      image: quay.io/jbarea/my-ai-profile-generator:1.2
+      image: quay.io/jbarea/my-ai-profile-generator:1.1.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.important_notes != '' }}
     container:
-      image: quay.io/jbarea/my-ai-profile-generator:1.2
+      image: quay.io/jbarea/my-ai-profile-generator:1.1.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -127,7 +127,7 @@ jobs:
     needs: [github, linkedin, rss, important_notes]
     if: ${{ (needs.github.result == 'success' && needs.linkedin.result == 'success') && (needs.rss.result == 'success' || needs.rss.result == 'skipped') && (needs.important_notes.result == 'success' || needs.important_notes.result == 'skipped') }}
     container:
-      image: quay.io/jbarea/my-ai-profile-generator:1.2
+      image: quay.io/jbarea/my-ai-profile-generator:1.1.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
