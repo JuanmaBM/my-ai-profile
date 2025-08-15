@@ -35,19 +35,22 @@ def rss(url: str, name: str):
     Path("rss_analysis.json").write_text(json.dumps(existing_data, indent=2))
     typer.echo(f"✅ RSS analysis completed for {name}")
 
+@app.command("important_notes")
+def important_notes(important_notes: str):
+    Path("important_notes.json").write_text(json.dumps({"important_notes": important_notes}, indent=2))
+    typer.echo(f"✅ Important notes added")
+
 @app.command()
 def merge(user: str):
     data = {}
     
-    # Load LinkedIn and GitHub analysis
-    for file in ["linkedin_analysis.json", "github_analysis.json"]:
+    for file in ["linkedin_analysis.json", "github_analysis.json", "important_notes.json"]:
         if Path(file).exists():
             try:
                 data.update(json.loads(Path(file).read_text()))
             except Exception as e:
                 print(f"Error reading {file}: {e}")
     
-    # Load RSS analysis
     writing_style_by_platform = _load_rss_file("rss_analysis.json")
 
     md = generate_markdown({
@@ -55,7 +58,8 @@ def merge(user: str):
         "personality": data.get("linkedin", ""),
         "writing_style": writing_style_by_platform,
         "code_style": data.get("github", ""),
-        "topics": data.get("interests", [])
+        "topics": data.get("interests", []),
+        "important_notes": data.get("important_notes", ""),
     })
     Path("MyAIProfile.md").write_text(md)
     typer.echo("✅ Final profile generated in MyAIProfile.md")

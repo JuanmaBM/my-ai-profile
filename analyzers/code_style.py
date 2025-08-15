@@ -1,4 +1,4 @@
-from llm_client import analyze
+from llm.llm_client import analyze
 import os
 import re
 import requests

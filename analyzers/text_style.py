@@ -1,4 +1,4 @@
-from llm_client import analyze
+from llm.llm_client import analyze
 
 
 def analyze_personality_text_style(text: str) -> str:
